@@ -45,7 +45,7 @@
     "react-dom": "^18.2.0",
     "reactflow": "^11.10.3",
     "uuid": "^9.0.1",
-    "winston": "^3.17.0"
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
