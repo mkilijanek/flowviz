@@ -1,7 +1,7 @@
 # Release Runbook
 
 ## Scope
-This repository is prepared for `1.0.0` with automated verification for lint, tests, production build, API smoke tests, and Docker Compose image builds.
+This repository is prepared for `1.0.2` with automated verification for lint, tests, production build, API smoke tests, Docker Compose image builds, container publication, and security scanning.
 
 ## Pre-release checklist
 1. Run `npm run verify:release`.
@@ -12,7 +12,7 @@ This repository is prepared for `1.0.0` with automated verification for lint, te
 
 ## Release procedure
 1. Merge the release-ready branch into `main`.
-2. Create and push a tag such as `v1.0.0`.
+2. Create and push a tag such as `v1.0.2`.
 3. Allow the `Release` GitHub Actions workflow to complete.
 4. Validate the generated GitHub Release entry and attached files.
 
@@ -20,7 +20,7 @@ This repository is prepared for `1.0.0` with automated verification for lint, te
 1. Re-deploy the previous stable Git tag or Docker image.
 2. Revert the offending commit on `main` if needed.
 3. Re-run `npm run verify:release` on the rollback candidate.
-4. Publish a corrective patch release, for example `v1.0.1`.
+4. Publish a corrective patch release, for example `v1.0.3`.
 
 ## Supported verification commands
 - `npm run lint`

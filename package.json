@@ -1,9 +1,13 @@
 {
   "name": "flowviz",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "AI-powered cybersecurity attack flow visualization tool using MITRE ATT&CK",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=20 <25",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "vite",
     "server": "node server.js",
@@ -21,52 +25,65 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
     "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
+    "@emotion/styled": "^11.14.1",
     "@mozilla/readability": "^0.6.0",
-    "@mui/icons-material": "^5.15.10",
-    "@mui/material": "^5.15.10",
-    "@tanstack/react-query": "^5.20.5",
-    "@types/dagre": "^0.7.53",
+    "@mui/icons-material": "^5.18.0",
+    "@mui/material": "^5.18.0",
+    "@tanstack/react-query": "^5.90.21",
+    "@types/dagre": "^0.7.54",
     "axios": "^1.13.6",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "dagre": "^0.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^4.21.2",
+    "dotenv": "^17.3.1",
+    "express": "^4.22.1",
     "express-rate-limit": "^8.3.1",
-    "file-type": "^21.0.0",
+    "file-type": "^21.3.1",
     "helmet": "^8.1.0",
     "html-to-image": "^1.11.13",
     "http-proxy-middleware": "^2.0.6",
     "ip-address": "^10.0.1",
     "jsdom": "^26.1.0",
     "node-fetch": "^3.3.2",
-    "openai": "^6.7.0",
+    "openai": "^6.27.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "reactflow": "^11.10.3",
     "uuid": "^9.0.1",
-    "winston": "^3.17.0"
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
     "@types/uuid": "^9.0.8",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^8.2.2",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.26",
     "supertest": "^7.2.2",
-    "terser": "^5.43.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.0",
+    "terser": "^5.46.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
     "vitest": "^4.0.18"
   },
   "overrides": {
     "lodash": "4.17.23",
-    "qs": "6.15.0"
+    "qs": "6.15.0",
+    "js-yaml": "4.1.1",
+    "eslint": {
+      "minimatch": "3.1.5"
+    },
+    "@eslint/eslintrc": {
+      "minimatch": "3.1.5"
+    },
+    "@humanwhocodes/config-array": {
+      "minimatch": "3.1.5"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "9.0.7"
+    }
   },
   "main": "eslint.config.js"
 }

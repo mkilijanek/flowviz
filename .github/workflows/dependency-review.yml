@@ -15,11 +15,12 @@ concurrency:
 
 jobs:
   dependency-review:
+    name: Review dependency delta
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Review dependency changes
         uses: actions/dependency-review-action@v4
@@ -27,3 +28,5 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: always
           license-check: false
+          deny-ghsas: true
+          warn-only: false
