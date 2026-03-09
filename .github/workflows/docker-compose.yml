@@ -1,4 +1,4 @@
-name: Docker Compose
+name: Docker Compose Validation
 
 on:
   push:
@@ -17,6 +17,10 @@ concurrency:
 jobs:
   docker-compose-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_DOCKER_CLI_BUILD: 1
+      DOCKER_BUILDKIT: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +45,16 @@ jobs:
           docker compose logs
           exit 1
 
-      - name: Tear down Docker Compose stack
+      - name: Collect Docker Compose logs
         if: always()
-        run: docker compose down -v
+        run: |
+          docker compose logs > /tmp/flowviz-docker-compose.log || true
+          docker compose down -v
+
+      - name: Upload Docker Compose logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose-logs
+          path: /tmp/flowviz-docker-compose.log
+          if-no-files-found: ignore
