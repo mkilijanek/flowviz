@@ -23,7 +23,7 @@
     "verify:release": "npm run lint && npm test && npm run build && npm run smoke:release && npm run audit:prod && docker compose config && docker compose build"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.3",
+    "@anthropic-ai/sdk": "^0.78.0",
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.14.1",
     "@mozilla/readability": "^0.6.0",
@@ -59,9 +59,9 @@
     "@typescript-eslint/parser": "^8.57.0",
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^8.2.2",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.26",
+    "eslint-plugin-react-refresh": "^0.5.2",
     "supertest": "^7.2.2",
     "terser": "^5.46.0",
     "typescript": "^5.9.3",
