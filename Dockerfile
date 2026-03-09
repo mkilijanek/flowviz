@@ -13,7 +13,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runtime
+FROM cgr.dev/chainguard/node@sha256:99dc9c014d0d53635389a114f053c4e03385148678c1fca2fac413933c2fad5f AS runtime
 
 ENV NODE_ENV=production
 WORKDIR /app
@@ -27,7 +27,7 @@ COPY --from=builder /app/security-utils.js ./security-utils.js
 COPY --from=builder /app/providers ./providers
 COPY --from=builder /app/src/shared/utils ./src/shared/utils
 
-USER nonroot:nonroot
+USER 65532
 
 EXPOSE 3001
 
