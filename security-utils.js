@@ -104,8 +104,15 @@ export async function resolveAndValidateUrl(urlString, lookup = dns.lookup) {
   }
 }
 
+export function sanitizeForLog(value) {
+  return String(value).replace(/[\r\n\t]/g, ' ').slice(0, 512);
+}
+
 // Shared secure fetch with common security headers and limits
-export async function secureFetch(url, options = {}) {
+export async function secureFetch(urlInput, options = {}, lookup = dns.lookup) {
+  const validatedUrl = urlInput instanceof URL
+    ? await resolveAndValidateUrl(urlInput.href, lookup)
+    : await resolveAndValidateUrl(String(urlInput), lookup);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeout || 30000);
   
@@ -118,7 +125,7 @@ export async function secureFetch(url, options = {}) {
   };
   
   try {
-    const response = await fetch(url.href, {
+    const response = await fetch(validatedUrl.href, {
       method: 'GET',
       headers: {
         ...defaultHeaders,
@@ -126,6 +133,7 @@ export async function secureFetch(url, options = {}) {
       },
       signal: controller.signal,
       size: options.maxSize || 10 * 1024 * 1024, // 10MB default limit
+      redirect: 'error',
     });
     
     clearTimeout(timeout);
@@ -149,22 +157,40 @@ export const createRateLimit = (options) => rateLimit({
 
 // Predefined rate limits with environment variable support
 export const rateLimits = {
+  general: createRateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_GENERAL || '300', 10),
+    message: 'Too many requests from this IP, please try again later.'
+  }),
+
+  staticAssets: createRateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_STATIC || '120', 10),
+    message: 'Too many application requests from this IP, please try again later.'
+  }),
+
   articles: createRateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_ARTICLES) || 10,
+    max: parseInt(process.env.RATE_LIMIT_ARTICLES || '10', 10),
     message: 'Too many article fetch requests from this IP, please try again later.'
   }),
   
   images: createRateLimit({
     windowMs: 10 * 60 * 1000, // 10 minutes  
-    max: parseInt(process.env.RATE_LIMIT_IMAGES) || 50,
+    max: parseInt(process.env.RATE_LIMIT_IMAGES || '50', 10),
     message: 'Too many image fetch requests from this IP, please try again later.'
   }),
   
   streaming: createRateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
-    max: parseInt(process.env.RATE_LIMIT_STREAMING) || 5, // Very strict for expensive AI calls
+    max: parseInt(process.env.RATE_LIMIT_STREAMING || '5', 10), // Very strict for expensive AI calls
     message: 'Too many streaming analysis requests from this IP, please try again later.'
+  }),
+
+  proxy: createRateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_PROXY || '60', 10),
+    message: 'Too many proxy requests from this IP, please try again later.'
   })
 };
 

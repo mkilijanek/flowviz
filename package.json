@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=20 <25",
+    "node": ">=20.19 <25",
     "npm": ">=10"
   },
   "scripts": {
@@ -57,7 +57,7 @@
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@vitejs/plugin-react": "^5.1.4",
     "concurrently": "^8.2.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -65,7 +65,7 @@
     "supertest": "^7.2.2",
     "terser": "^5.46.0",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21",
+    "vite": "^7.3.1",
     "vitest": "^4.0.18"
   },
   "overrides": {

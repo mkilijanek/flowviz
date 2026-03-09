@@ -8,7 +8,7 @@ import fetch from 'node-fetch';
 import { fileTypeFromBuffer } from 'file-type';
 import { Readability } from '@mozilla/readability';
 import { JSDOM } from 'jsdom';
-import { resolveAndValidateUrl, secureFetch, rateLimits, handleFetchError } from './security-utils.js';
+import { resolveAndValidateUrl, secureFetch, rateLimits, handleFetchError, sanitizeForLog } from './security-utils.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from './src/shared/utils/logger.js';
 import dotenv from 'dotenv';
@@ -80,6 +80,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+function readSingleQueryParam(value) {
+  return typeof value === 'string' ? value : null;
+}
 
 // Security middleware - MUST come first
 app.use(helmet({
@@ -182,21 +186,18 @@ app.get('/api/providers', async (_req, res) => {
 
 // Secure image fetch endpoint with rate limiting and validation  
 app.get('/api/fetch-image', rateLimits.images, async (req, res) => {
-  const { url } = req.query;
+  const url = readSingleQueryParam(req.query.url);
   if (!url) {
     return res.status(400).json({ error: 'Missing url parameter' });
   }
   
-  logger.debug(`Fetching image from: ${url}`);
+  logger.debug('Fetching image from remote URL', { url: sanitizeForLog(url) });
   
   try {
-    // Step 1: Validate URL to prevent SSRF attacks
-    const validatedUrl = await resolveAndValidateUrl(url);
-    
-    // Step 2: Secure fetch with image-specific settings
-    const response = await secureFetch(validatedUrl, {
+    // Step 1: Secure fetch with image-specific settings
+    const response = await secureFetch(url, {
       timeout: 15000, // 15 seconds for images
-      maxSize: parseInt(process.env.MAX_IMAGE_SIZE) || 5 * 1024 * 1024, // Default 5MB limit for images
+      maxSize: parseInt(process.env.MAX_IMAGE_SIZE || `${5 * 1024 * 1024}`, 10), // Default 5MB limit for images
       headers: {
         'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
       }
@@ -223,7 +224,7 @@ app.get('/api/fetch-image', rateLimits.images, async (req, res) => {
     const buffer = await response.arrayBuffer();
     const nodeBuffer = Buffer.from(buffer);
     
-    if (nodeBuffer.length > (parseInt(process.env.MAX_IMAGE_SIZE) || 3 * 1024 * 1024)) { // Configurable limit for processed images
+    if (nodeBuffer.length > parseInt(process.env.MAX_IMAGE_SIZE || `${3 * 1024 * 1024}`, 10)) { // Configurable limit for processed images
       return res.status(413).json({ 
         error: 'Image too large. Maximum size is 3MB.' 
       });
@@ -244,7 +245,10 @@ app.get('/api/fetch-image', rateLimits.images, async (req, res) => {
     // Step 6: Convert to base64
     const base64 = nodeBuffer.toString('base64');
     
-    logger.info(`Image fetched: ${mediaType}, ${Math.round(base64.length/1024)}KB`);
+    logger.info('Image fetched successfully', {
+      mediaType,
+      sizeKb: Math.round(base64.length / 1024)
+    });
     res.json({ base64, mediaType });
     
   } catch (error) {
@@ -258,19 +262,19 @@ app.get('/api/fetch-image', rateLimits.images, async (req, res) => {
 
 // Secure article fetch endpoint with rate limiting and proper parsing
 app.get('/api/fetch-article', rateLimits.articles, async (req, res) => {
-  const { url } = req.query;
+  const url = readSingleQueryParam(req.query.url);
   if (!url) {
     return res.status(400).json({ error: 'Missing url parameter' });
   }
   
-  logger.debug(`Fetching article from: ${url}`);
+  logger.debug('Fetching article from remote URL', { url: sanitizeForLog(url) });
   
   try {
     // Step 1: Validate URL to prevent SSRF attacks
     const validatedUrl = await resolveAndValidateUrl(url);
     
     // Step 2: Secure fetch with article-specific settings
-    const response = await secureFetch(validatedUrl, {
+    const response = await secureFetch(url, {
       timeout: 30000, // 30 seconds for articles
       maxSize: 10 * 1024 * 1024, // 10MB limit
       headers: {
@@ -297,7 +301,7 @@ app.get('/api/fetch-article', rateLimits.articles, async (req, res) => {
     
     // Step 4: Get HTML with size check
     const html = await response.text();
-    if (html.length > (parseInt(process.env.MAX_ARTICLE_SIZE) || 5 * 1024 * 1024)) { // Configurable limit
+    if (html.length > parseInt(process.env.MAX_ARTICLE_SIZE || `${5 * 1024 * 1024}`, 10)) { // Configurable limit
       return res.status(413).json({ 
         error: 'Content too large. Maximum size is 5MB.' 
       });
@@ -327,7 +331,10 @@ app.get('/api/fetch-article', rateLimits.articles, async (req, res) => {
       </html>
     `;
     
-    logger.info(`Successfully parsed article: "${article.title}", content length: ${enhancedHtml.length} characters`);
+    logger.info('Successfully parsed article', {
+      title: sanitizeForLog(article.title || 'Article'),
+      contentLength: enhancedHtml.length
+    });
     res.json({ 
       contents: enhancedHtml,
       metadata: {
@@ -361,7 +368,10 @@ app.post('/api/vision-analysis', rateLimits.streaming, async (req, res) => {
       return res.status(400).json({ error: 'Missing or invalid articleText' });
     }
     
-    logger.info(`Vision analysis request: ${images.length} images, ${articleText.length} chars of text`);
+    logger.info('Vision analysis request received', {
+      imageCount: images.length,
+      articleTextLength: articleText.length
+    });
     
     // Initialize Anthropic client with server API key and base URL
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -497,7 +507,7 @@ app.post('/api/analyze-stream', rateLimits.streaming, async (req, res) => {
       return;
     }
 
-    logger.info('Using AI provider:', selectedProvider);
+    logger.info('Using AI provider', { provider: sanitizeForLog(selectedProvider) });
 
     // Get provider configuration
     const providerConfig = ProviderFactory.getProviderConfig(selectedProvider);
@@ -512,7 +522,7 @@ app.post('/api/analyze-stream', rateLimits.streaming, async (req, res) => {
 
     // Validate provider is configured
     if (!aiProvider.isConfigured()) {
-      logger.error(`${selectedProvider} provider not properly configured`);
+      logger.error('AI provider not properly configured', { provider: sanitizeForLog(selectedProvider) });
       res.write(`data: ${JSON.stringify({ type: 'error', error: `${selectedProvider} provider not properly configured. Check your environment variables.` })}\n\n`);
       res.end();
       return;
@@ -610,12 +620,18 @@ app.post('/api/analyze-stream', rateLimits.streaming, async (req, res) => {
           if (processedImages.length > 0) {
 
             try {
-              logger.info(`Processing ${processedImages.length} images with ${selectedProvider} vision analysis`);
+              logger.info('Processing images with provider vision analysis', {
+                imageCount: processedImages.length,
+                provider: sanitizeForLog(selectedProvider)
+              });
               const visionResult = await aiProvider.analyzeVision(processedImages, finalText);
               visionAnalysis = visionResult.analysisText;
               logger.info(`Vision analysis complete: ${visionAnalysis.length} chars`);
             } catch (visionError) {
-              logger.warn(`Vision analysis failed with ${selectedProvider}:`, visionError.message);
+              logger.warn('Vision analysis failed for provider', {
+                provider: sanitizeForLog(selectedProvider),
+                message: sanitizeForLog(visionError.message)
+              });
               // Continue without vision analysis
             }
           }
@@ -1010,7 +1026,7 @@ Article text:
 
 // Proxy Anthropic API requests
 const anthropicTarget = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
-app.use('/anthropic', createProxyMiddleware({
+app.use('/anthropic', rateLimits.proxy, createProxyMiddleware({
   target: anthropicTarget,
   changeOrigin: true,
   pathRewrite: {
@@ -1041,7 +1057,7 @@ app.use((err, _req, res, _next) => {
 
 // Serve React app for any non-API routes in production
 if (process.env.NODE_ENV === 'production') {
-  app.get('*', (_req, res) => {
+  app.get('*', rateLimits.staticAssets, (_req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });
 } else {
