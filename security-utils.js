@@ -1,43 +1,106 @@
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import rateLimit from 'express-rate-limit';
 import { logger } from './src/shared/utils/logger.js';
+
+function normalizeAddress(address) {
+  const normalized = address.toLowerCase();
+  return normalized.startsWith('::ffff:') ? normalized.slice(7) : normalized;
+}
+
+function isPrivateOrUnsafeIp(address) {
+  const normalized = normalizeAddress(address);
+  const ipVersion = net.isIP(normalized);
+
+  if (!ipVersion) {
+    return false;
+  }
+
+  if (ipVersion === 4) {
+    if (normalized === '127.0.0.1') {
+      return 'Localhost access is not allowed';
+    }
+    if (/^10\./.test(normalized) || /^192\.168\./.test(normalized) || /^172\.(1[6-9]|2\d|3[01])\./.test(normalized)) {
+      return 'Private IP ranges are not allowed';
+    }
+    if (/^(0\.|169\.254\.|224\.|240\.)/.test(normalized)) {
+      return 'Invalid IP range';
+    }
+    return false;
+  }
+
+  if (['::1', '::', '0:0:0:0:0:0:0:1'].includes(normalized)) {
+    return 'Localhost access is not allowed';
+  }
+  if (normalized.startsWith('fc') || normalized.startsWith('fd')) {
+    return 'Private IP ranges are not allowed';
+  }
+  if (normalized.startsWith('fe80:')) {
+    return 'Invalid IP range';
+  }
+  if (normalized.startsWith('ff')) {
+    return 'Invalid IP range';
+  }
+
+  return false;
+}
+
+function validateHostname(hostname) {
+  const normalized = hostname.toLowerCase();
+
+  if (['localhost', '::1', '[::1]'].includes(normalized)) {
+    throw new Error('Localhost access is not allowed');
+  }
+
+  const unsafeIpMessage = isPrivateOrUnsafeIp(normalized);
+  if (unsafeIpMessage) {
+    throw new Error(unsafeIpMessage);
+  }
+}
 
 // Shared URL validation to prevent SSRF attacks
 export function validateUrl(urlString) {
   try {
     const url = new URL(urlString);
-    
-    // Only allow HTTP/HTTPS protocols
+
     if (!['http:', 'https:'].includes(url.protocol)) {
       throw new Error('Only HTTP and HTTPS protocols are allowed');
     }
-    
-    // Block localhost and private IP ranges
-    const hostname = url.hostname.toLowerCase();
-    
-    // Block localhost variations (URL.hostname wraps IPv6 in brackets)
-    if (['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname)) {
-      throw new Error('Localhost access is not allowed');
-    }
-    
-    // Block private IP ranges
-    if (hostname.match(/^192\.168\./)) {
-      throw new Error('Private IP ranges are not allowed');
-    }
-    if (hostname.match(/^10\./)) {
-      throw new Error('Private IP ranges are not allowed');
-    }
-    if (hostname.match(/^172\.(1[6-9]|2\d|3[01])\./)) {
-      throw new Error('Private IP ranges are not allowed');
-    }
-    
-    // Block other dangerous schemes
-    if (hostname.match(/^(0\.|169\.254\.|224\.|240\.)/)) {
-      throw new Error('Invalid IP range');
-    }
-    
+
+    validateHostname(url.hostname);
     return url;
   } catch (error) {
     throw new Error(`Invalid URL: ${error.message}`);
+  }
+}
+
+export async function resolveAndValidateUrl(urlString, lookup = dns.lookup) {
+  const url = validateUrl(urlString);
+
+  if (net.isIP(url.hostname)) {
+    return url;
+  }
+
+  try {
+    const results = await lookup(url.hostname, { all: true, verbatim: true });
+    if (!results.length) {
+      throw new Error('Hostname did not resolve to any addresses');
+    }
+
+    for (const result of results) {
+      const unsafeIpMessage = isPrivateOrUnsafeIp(result.address);
+      if (unsafeIpMessage) {
+        throw new Error(unsafeIpMessage);
+      }
+    }
+
+    return url;
+  } catch (error) {
+    if (error.message.includes('Localhost access is not allowed') || error.message.includes('Private IP ranges are not allowed') || error.message.includes('Invalid IP range')) {
+      throw new Error(`Invalid URL: ${error.message}`);
+    }
+
+    throw new Error(`Invalid URL: DNS resolution failed for ${url.hostname}`);
   }
 }
 

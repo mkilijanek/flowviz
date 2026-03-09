@@ -38,6 +38,17 @@ Open-source tool that analyzes cybersecurity articles and generates interactive 
    ```
    Opens at http://localhost:5173
 
+## Docker
+
+Run the production stack locally with Docker Compose:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The application is served by the Express backend on `http://localhost:3001`. For Ollama on the host machine, the default Compose setup points to `http://host.docker.internal:11434`.
+
 ## Usage
 
 1. Paste a cybersecurity article URL or text
@@ -95,7 +106,17 @@ npm run dev        # Frontend only
 npm run server     # Backend only
 npm run dev:full   # Both (recommended)
 npm run build      # Production build
+npm run smoke:release
+npm run verify:release
 ```
+
+`npm run verify:release` is the pre-release gate for `1.0.0`: lint, tests, production build, API smoke test, Docker Compose config validation, and Docker image build.
+
+## Release
+
+- Changelog: [`CHANGELOG.md`](./CHANGELOG.md)
+- Release runbook: [`docs/RELEASE.md`](./docs/RELEASE.md)
+- Tag-based GitHub Release workflow: push a tag like `v1.0.0`
 
 ## Architecture
 

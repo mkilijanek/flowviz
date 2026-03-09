@@ -26,6 +26,7 @@ export class StreamingDirectFlowClient {
     callbacks: StreamingDirectFlowCallbacks,
     options?: StreamingOptions
   ): Promise<void> {
+    this.resetState();
     console.log('=== Starting Streaming Direct Flow Extraction ===');
     console.log('Provider:', options?.provider || 'default');
     console.log('Model:', options?.model || 'default');
@@ -124,6 +125,14 @@ export class StreamingDirectFlowClient {
       console.error('❌ Streaming extraction failed:', error);
       callbacks.onError(error as Error);
     }
+  }
+
+  private resetState() {
+    this.nodeIdMap.clear();
+    this.processedNodeIds.clear();
+    this.processedEdgeIds.clear();
+    this.pendingEdges = [];
+    this.emittedNodeIds.clear();
   }
 
   private tryParseNodesFromPartial(text: string, callbacks: StreamingDirectFlowCallbacks) {
@@ -315,9 +324,30 @@ export class StreamingDirectFlowClient {
           console.log(`✅ All nodes were processed during streaming`);
         }
       }
-      
-      // Skip edge processing - all edges are handled during streaming
-      // Process any remaining pending edges one final time
+
+      if (json.edges && Array.isArray(json.edges)) {
+        json.edges.forEach((edge: any) => {
+          if (!edge?.id || !edge?.source || !edge?.target || this.processedEdgeIds.has(edge.id)) {
+            return;
+          }
+
+          this.processedEdgeIds.add(edge.id);
+          const flowEdge: Edge = {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            type: 'floating',
+            label: edge.label || '',
+          };
+
+          if (this.emittedNodeIds.has(edge.source) && this.emittedNodeIds.has(edge.target)) {
+            callbacks.onEdge(flowEdge);
+          } else {
+            this.pendingEdges.push({ edge: flowEdge, source: edge.source, target: edge.target });
+          }
+        });
+      }
+
       this.processPendingEdges(callbacks);
     } catch (e) {
       console.error('Failed to parse final response:', e);

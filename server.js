@@ -8,14 +8,14 @@ import fetch from 'node-fetch';
 import { fileTypeFromBuffer } from 'file-type';
 import { Readability } from '@mozilla/readability';
 import { JSDOM } from 'jsdom';
-import { validateUrl, secureFetch, rateLimits, handleFetchError } from './security-utils.js';
+import { resolveAndValidateUrl, secureFetch, rateLimits, handleFetchError } from './security-utils.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from './src/shared/utils/logger.js';
 import dotenv from 'dotenv';
 import { ProviderFactory } from './providers/provider-factory.js';
 
 // Load environment variables from .env file
-const dotenvResult = dotenv.config();
+const dotenvResult = dotenv.config({ quiet: true });
 
 // Force values from .env file if available
 if (dotenvResult.parsed) {
@@ -61,18 +61,19 @@ if (dotenvResult.parsed) {
   }
 }
 
-// Log the loaded environment variables to verify .env file loading
-console.log('[ENV] Loaded from .env file:', dotenvResult.parsed ? 'YES' : 'NO');
-console.log('[ENV] ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? '***' + process.env.ANTHROPIC_API_KEY.slice(-4) : 'Not set');
-console.log('[ENV] ANTHROPIC_BASE_URL:', process.env.ANTHROPIC_BASE_URL || 'Not set');
-console.log('[ENV] ANTHROPIC_MODEL:', process.env.ANTHROPIC_MODEL || 'Not set');
-console.log('[ENV] OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '***' + process.env.OPENAI_API_KEY.slice(-4) : 'Not set');
-console.log('[ENV] OPENAI_BASE_URL:', process.env.OPENAI_BASE_URL || 'Not set');
-console.log('[ENV] OPENAI_MODEL:', process.env.OPENAI_MODEL || 'Not set');
-console.log('[ENV] OLLAMA_BASE_URL:', process.env.OLLAMA_BASE_URL || 'Not set');
-console.log('[ENV] OLLAMA_TEXT_MODEL:', process.env.OLLAMA_TEXT_MODEL || 'Not set');
-console.log('[ENV] OLLAMA_VISION_MODEL:', process.env.OLLAMA_VISION_MODEL || 'Not set');
-console.log('[ENV] DEFAULT_AI_PROVIDER:', process.env.DEFAULT_AI_PROVIDER || 'Not set');
+if (process.env.NODE_ENV !== 'test') {
+  console.log('[ENV] Loaded from .env file:', dotenvResult.parsed ? 'YES' : 'NO');
+  console.log('[ENV] ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 'Configured' : 'Not set');
+  console.log('[ENV] ANTHROPIC_BASE_URL:', process.env.ANTHROPIC_BASE_URL || 'Not set');
+  console.log('[ENV] ANTHROPIC_MODEL:', process.env.ANTHROPIC_MODEL || 'Not set');
+  console.log('[ENV] OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Configured' : 'Not set');
+  console.log('[ENV] OPENAI_BASE_URL:', process.env.OPENAI_BASE_URL || 'Not set');
+  console.log('[ENV] OPENAI_MODEL:', process.env.OPENAI_MODEL || 'Not set');
+  console.log('[ENV] OLLAMA_BASE_URL:', process.env.OLLAMA_BASE_URL || 'Not set');
+  console.log('[ENV] OLLAMA_TEXT_MODEL:', process.env.OLLAMA_TEXT_MODEL || 'Not set');
+  console.log('[ENV] OLLAMA_VISION_MODEL:', process.env.OLLAMA_VISION_MODEL || 'Not set');
+  console.log('[ENV] DEFAULT_AI_PROVIDER:', process.env.DEFAULT_AI_PROVIDER || 'Not set');
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,7 +191,7 @@ app.get('/api/fetch-image', rateLimits.images, async (req, res) => {
   
   try {
     // Step 1: Validate URL to prevent SSRF attacks
-    const validatedUrl = validateUrl(url);
+    const validatedUrl = await resolveAndValidateUrl(url);
     
     // Step 2: Secure fetch with image-specific settings
     const response = await secureFetch(validatedUrl, {
@@ -266,7 +267,7 @@ app.get('/api/fetch-article', rateLimits.articles, async (req, res) => {
   
   try {
     // Step 1: Validate URL to prevent SSRF attacks
-    const validatedUrl = validateUrl(url);
+    const validatedUrl = await resolveAndValidateUrl(url);
     
     // Step 2: Secure fetch with article-specific settings
     const response = await secureFetch(validatedUrl, {
@@ -532,7 +533,7 @@ app.post('/api/analyze-stream', rateLimits.streaming, async (req, res) => {
     if (url) {
       res.write(`data: ${JSON.stringify({ type: 'progress', stage: 'fetching_article', message: 'Fetching article content...' })}\n\n`);
 
-      const validatedUrl = validateUrl(url);
+      const validatedUrl = await resolveAndValidateUrl(url);
       const response = await secureFetch(validatedUrl, { timeout: 30000 });
 
       if (!response.ok) {
@@ -579,7 +580,7 @@ app.post('/api/analyze-stream', rateLimits.streaming, async (req, res) => {
             if (!imgUrl || !imgUrl.startsWith('http')) continue;
 
             try {
-              const imageResponse = await secureFetch(validateUrl(imgUrl), {
+              const imageResponse = await secureFetch(await resolveAndValidateUrl(imgUrl), {
                 timeout: 15000,
                 maxSize: parseInt(process.env.MAX_IMAGE_SIZE) || 3 * 1024 * 1024,
                 headers: { 'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8' }
@@ -688,7 +689,7 @@ app.post('/api/claude-stream', rateLimits.streaming, async (req, res) => {
       res.write(`data: ${JSON.stringify({ type: 'progress', stage: 'fetching_article', message: 'Fetching article content...' })}\n\n`);
       
       // Validate and fetch article using existing logic
-      const validatedUrl = validateUrl(url);
+      const validatedUrl = await resolveAndValidateUrl(url);
       const response = await secureFetch(validatedUrl, { timeout: 30000 });
       
       if (!response.ok) {
@@ -741,7 +742,7 @@ app.post('/api/claude-stream', rateLimits.streaming, async (req, res) => {
             
             try {
               // Use our secure image fetch endpoint internally
-              const imageResponse = await secureFetch(validateUrl(imgUrl), {
+              const imageResponse = await secureFetch(await resolveAndValidateUrl(imgUrl), {
                 timeout: 15000,
                 maxSize: parseInt(process.env.MAX_IMAGE_SIZE) || 3 * 1024 * 1024, // Configurable limit
                 headers: { 'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8' }
@@ -1054,7 +1055,17 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
-});
+export { app };
+
+export function startServer(port = PORT) {
+  return app.listen(port, () => {
+    logger.info(`Server running on port ${port}`);
+    logger.info(`Health check: http://localhost:${port}/health`);
+  });
+}
+
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+
+if (isDirectRun) {
+  startServer();
+}

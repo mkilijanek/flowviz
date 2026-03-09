@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { validateUrl, handleFetchError } from './security-utils.js';
+import { describe, it, expect, vi } from 'vitest';
+import { validateUrl, resolveAndValidateUrl, handleFetchError } from './security-utils.js';
 
 describe('validateUrl', () => {
   // ── Valid URLs ──────────────────────────────────────────────────────
@@ -146,5 +146,32 @@ describe('handleFetchError', () => {
     error.code = 'ENOTFOUND';
     const result = handleFetchError(error);
     expect(result.error).toBe('resource not found');
+  });
+});
+
+describe('resolveAndValidateUrl', () => {
+  it('allows domains resolving to public IPs', async () => {
+    const lookup = vi.fn().mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
+    const url = await resolveAndValidateUrl('https://example.com/article', lookup);
+    expect(url.hostname).toBe('example.com');
+    expect(lookup).toHaveBeenCalledWith('example.com', { all: true, verbatim: true });
+  });
+
+  it('blocks domains resolving to private IPv4 ranges', async () => {
+    const lookup = vi.fn().mockResolvedValue([{ address: '10.0.0.8', family: 4 }]);
+    await expect(resolveAndValidateUrl('https://internal.example/article', lookup))
+      .rejects.toThrow('Private IP ranges are not allowed');
+  });
+
+  it('blocks domains resolving to localhost through IPv4-mapped IPv6', async () => {
+    const lookup = vi.fn().mockResolvedValue([{ address: '::ffff:127.0.0.1', family: 6 }]);
+    await expect(resolveAndValidateUrl('https://internal.example/article', lookup))
+      .rejects.toThrow('Localhost access is not allowed');
+  });
+
+  it('surfaces DNS resolution failures as invalid URLs', async () => {
+    const lookup = vi.fn().mockRejectedValue(new Error('getaddrinfo ENOTFOUND example.com'));
+    await expect(resolveAndValidateUrl('https://example.com/article', lookup))
+      .rejects.toThrow('DNS resolution failed for example.com');
   });
 });

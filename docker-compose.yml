@@ -1,0 +1,24 @@
+services:
+  app:
+    image: flowviz:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DEFAULT_AI_PROVIDER: ${DEFAULT_AI_PROVIDER:-ollama}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_TEXT_MODEL: ${OLLAMA_TEXT_MODEL:-}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3001,http://127.0.0.1:3001}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

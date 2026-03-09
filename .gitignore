@@ -30,4 +30,6 @@ dist-ssr
 
 # Documentation (local development)
 docs/
+!docs/
+!docs/RELEASE.md
 CLAUDE.md
