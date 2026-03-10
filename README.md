@@ -13,7 +13,7 @@ Open-source tool that analyzes cybersecurity articles and generates interactive 
 
 ## Quick Start
 
-**Prerequisites:** Node.js 18+
+**Prerequisites:** Node.js 20.19+ and npm 10+
 
 1. Clone and install:
    ```bash
@@ -47,7 +47,13 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The application is served by the Express backend on `http://localhost:3001`. For Ollama on the host machine, the default Compose setup points to `http://host.docker.internal:11434`.
+The application is served by the Express backend on `http://localhost:3001`. The Compose service includes a `/health` check. For Ollama on the host machine, the default Compose setup points to `http://host.docker.internal:11434`.
+
+Published release images are available from GHCR, for example:
+
+```bash
+docker run --rm -p 3001:3001 --env-file .env ghcr.io/mkilijanek/flowviz:1.0.2
+```
 
 ## Usage
 
@@ -105,18 +111,21 @@ For best results with a high-end GPU (e.g. NVIDIA RTX 5090), try `huggingface.co
 npm run dev        # Frontend only
 npm run server     # Backend only
 npm run dev:full   # Both (recommended)
+npm run lint       # ESLint gate
+npm test           # Vitest suite
 npm run build      # Production build
 npm run smoke:release
 npm run verify:release
 ```
 
-`npm run verify:release` is the pre-release gate for `1.0.0`: lint, tests, production build, API smoke test, Docker Compose config validation, and Docker image build.
+`npm run verify:release` is the release gate for the current `1.0.x` line: lint, tests, production build, API smoke test, production dependency audit, Docker Compose config validation, and Docker image build.
 
 ## Release
 
 - Changelog: [`CHANGELOG.md`](./CHANGELOG.md)
 - Release runbook: [`docs/RELEASE.md`](./docs/RELEASE.md)
-- Tag-based GitHub Release workflow: push a tag like `v1.0.0`
+- Next milestones: [`docs/MILESTONES.md`](./docs/MILESTONES.md)
+- Tag-based GitHub Release workflow: push a tag like `v1.0.3`
 
 ## Architecture
 
