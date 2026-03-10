@@ -23,7 +23,6 @@ import ErrorBoundary from '../../../shared/components/ErrorBoundary';
 import { THEME, NODE_TYPES } from './constants';
 import { useNodeSelection } from './hooks/useNodeSelection';
 import { StreamingDirectFlowClient } from '../services/streamingDirectFlowClient';
-import { ArticleContent } from '../services/types';
 import { getLayoutedElements } from './utils/layoutUtils';
 
 import NodeDetailsPanel from './components/NodeDetailsPanel/NodeDetailsPanel';

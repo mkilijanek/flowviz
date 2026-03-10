@@ -10,7 +10,6 @@ import {
   ListItemText,
   styled,
   FormControl,
-  InputLabel,
 } from '@mui/material';
 import { flowVizTheme } from '../../theme/flowviz-theme';
 

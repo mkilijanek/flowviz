@@ -3,8 +3,6 @@ import {
   Container,
   Typography,
   Paper,
-  Alert,
-  AlertTitle,
   Chip,
 } from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';

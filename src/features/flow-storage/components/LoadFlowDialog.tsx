@@ -19,7 +19,7 @@ import {
   GetApp as ExportIcon,
 } from '@mui/icons-material';
 import { SavedFlow, StorageStats } from '../types/SavedFlow';
-import { LocalStorageService, StorageError } from '../services';
+import { LocalStorageService } from '../services';
 import {
   FlowListItem,
   SearchAndFilters,
@@ -95,13 +95,6 @@ const LoadFlowDialog: React.FC<LoadFlowDialogProps> = ({
       console.error('Error loading storage stats:', err);
     }
   };
-
-  // Get all unique tags from flows
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    flows.forEach(flow => flow.metadata.tags.forEach(tag => tags.add(tag)));
-    return Array.from(tags).sort();
-  }, [flows]);
 
   // Filter and sort flows
   const filteredFlows = useMemo(() => {
@@ -340,14 +333,6 @@ const LoadFlowDialog: React.FC<LoadFlowDialogProps> = ({
     }
   };
 
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
-  };
-
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -445,7 +430,6 @@ const LoadFlowDialog: React.FC<LoadFlowDialogProps> = ({
                   isSelected={selectedFlow === flow.id}
                   onClick={() => setSelectedFlow(flow.id)}
                   onMenuClick={(event) => handleMenuOpen(event, flow.id)}
-                  formatFileSize={formatFileSize}
                   formatDate={formatDate}
                 />
               ))}

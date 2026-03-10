@@ -4,8 +4,7 @@ import {
   IconButton,
   Typography,
   LinearProgress,
-  Tooltip,
-  Chip
+  Tooltip
 } from '@mui/material';
 import {
   PlayArrow,

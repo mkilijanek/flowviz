@@ -62,42 +62,13 @@ export function getEdgeParams(sourceNode: any, targetNode: any) {
   const targetY = targetPos.y;
 
   // Calculate handle positions based on the determined positions
-  let sx = sourceX;
-  let sy = sourceY;
-  let tx = targetX;
-  let ty = targetY;
+  const { x: sx, y: sy } = sourceHandlePos === Position.Top
+    ? { x: sourceX + sourceWidth / 2, y: sourceY }
+    : { x: sourceX + sourceWidth / 2, y: sourceY + sourceHeight };
 
-  switch (sourceHandlePos) {
-    case Position.Top:
-      sx = sourceX + sourceWidth / 2;
-      sy = sourceY;
-      break;
-    case Position.Bottom:
-      sx = sourceX + sourceWidth / 2;
-      sy = sourceY + sourceHeight;
-      break;
-    default:
-      // Fallback to bottom for any unexpected case
-      sx = sourceX + sourceWidth / 2;
-      sy = sourceY + sourceHeight;
-      break;
-  }
-
-  switch (targetHandlePos) {
-    case Position.Top:
-      tx = targetX + targetWidth / 2;
-      ty = targetY;
-      break;
-    case Position.Bottom:
-      tx = targetX + targetWidth / 2;
-      ty = targetY + targetHeight;
-      break;
-    default:
-      // Fallback to top for any unexpected case
-      tx = targetX + targetWidth / 2;
-      ty = targetY;
-      break;
-  }
+  const { x: tx, y: ty } = targetHandlePos === Position.Bottom
+    ? { x: targetX + targetWidth / 2, y: targetY + targetHeight }
+    : { x: targetX + targetWidth / 2, y: targetY };
 
   return { sx, sy, tx, ty, sourcePos: sourceHandlePos, targetPos: targetHandlePos };
 }

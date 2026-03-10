@@ -4,7 +4,6 @@ import {
   Box,
   FormControlLabel,
   Switch,
-  MenuItem,
   InputLabel,
   ListSubheader,
   Chip,
@@ -80,11 +79,9 @@ export default function SettingsDialog({
   // Get provider configuration
   const {
     providers,
-    availableModels,
     selectedProvider: defaultProvider,
     selectedModel: defaultModel,
     setSelectedProvider: setProviderConfigProvider,
-    setSelectedModel: setProviderConfigModel,
   } = useProviderConfig();
 
   // Local state for dialog - only apply on save

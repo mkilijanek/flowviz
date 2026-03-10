@@ -165,7 +165,7 @@ export class StreamingDirectFlowClient {
             continue;
           }
           
-          if (char === '"' && !escapeNext) {
+          if (char === '"') {
             inString = !inString;
             continue;
           }

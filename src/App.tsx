@@ -4,12 +4,10 @@ import { FlowAlert } from './shared/components/Alert';
 import { flowVizTheme } from './shared/theme/flowviz-theme';
 import { useQuery } from '@tanstack/react-query';
 import StreamingFlowVisualization from './features/flow-analysis/components/StreamingFlowVisualization';
-import { ClaudeServiceError, NetworkError, APIError, ValidationError } from './features/flow-analysis/services';
+import { ValidationError } from './features/flow-analysis/services';
 import { SaveFlowDialog, LoadFlowDialog } from './features/flow-storage/components';
 import { SavedFlow } from './features/flow-storage/types/SavedFlow';
 import StreamingProgressBar from './shared/components/StreamingProgressBar';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { AppBar, SearchForm, NewSearchDialog, SettingsDialog } from './features/app/components';
 import { useAppState } from './features/app/hooks';
 import { useProviderConfig } from './features/app/hooks/useProviderConfig';
@@ -116,7 +114,7 @@ export default function App() {
     if (
       settingsLoaded &&
       !providerConfig.isLoading &&
-      (!selectedProvider || selectedProvider === '' || selectedProvider === null) &&
+      selectedProvider === '' &&
       providerConfig.selectedProvider &&
       providerConfig.selectedModel
     ) {
@@ -136,7 +134,7 @@ export default function App() {
     setSelectedModel
   ]);
 
-  const { isLoading, error, refetch } = useQuery({
+  const { isLoading, error } = useQuery({
     queryKey: ['article', submittedUrl, submittedText],
     queryFn: async () => {
       // Just set the article content flag to trigger streaming visualization
@@ -161,96 +159,6 @@ export default function App() {
       return failureCount < 2;
     },
   });
-
-  // Function to get error details and recovery suggestions
-  const getErrorDetails = (error: Error) => {
-    if (error instanceof NetworkError) {
-      return {
-        severity: 'error' as const,
-        title: 'Network Connection Failed',
-        message: error.message,
-        suggestion: 'Please check your internet connection and try again.',
-        action: 'Retry',
-        icon: <ErrorOutlineIcon />,
-      };
-    }
-    
-    if (error instanceof APIError) {
-      if (error.statusCode === 401) {
-        return {
-          severity: 'error' as const,
-          title: 'Authentication Error',
-          message: error.message,
-          suggestion: 'Please check your Anthropic API key in the environment variables.',
-          action: 'Check Configuration',
-          icon: <WarningIcon />,
-        };
-      }
-      
-      if (error.statusCode === 429) {
-        return {
-          severity: 'warning' as const,
-          title: 'Rate Limit Exceeded',
-          message: error.message,
-          suggestion: 'Please wait a moment and try again, or check your API usage limits.',
-          action: 'Retry',
-          icon: <WarningIcon />,
-        };
-      }
-      
-      if (error.statusCode === 402) {
-        return {
-          severity: 'error' as const,
-          title: 'API Quota Exceeded',
-          message: error.message,
-          suggestion: 'Please check your Anthropic account billing status and add credits if needed.',
-          action: 'Check Billing',
-          icon: <ErrorOutlineIcon />,
-        };
-      }
-      
-      return {
-        severity: 'error' as const,
-        title: 'API Error',
-        message: error.message,
-        suggestion: 'Please try again. If the problem persists, contact support.',
-        action: 'Retry',
-        icon: <ErrorOutlineIcon />,
-      };
-    }
-    
-    if (error instanceof ValidationError) {
-      return {
-        severity: 'warning' as const,
-        title: 'Invalid Input',
-        message: error.message,
-        suggestion: 'Please check the URL and ensure it points to a valid article.',
-        action: 'Try Different URL',
-        icon: <WarningIcon />,
-      };
-    }
-    
-    if (error instanceof ClaudeServiceError) {
-      return {
-        severity: 'error' as const,
-        title: 'Service Error',
-        message: error.message,
-        suggestion: 'Please try again. If the problem persists, contact support.',
-        action: 'Retry',
-        icon: <ErrorOutlineIcon />,
-      };
-    }
-    
-    // Generic error
-    return {
-      severity: 'error' as const,
-      title: 'Unexpected Error',
-      message: error.message || 'An unexpected error occurred',
-      suggestion: 'Please try again or contact support if the problem persists.',
-      action: 'Retry',
-      icon: <ErrorOutlineIcon />,
-    };
-  };
 
   const handleSubmit = (e: React.FormEvent, options?: { provider?: string; model?: string }) => {
     e.preventDefault();
@@ -302,12 +210,6 @@ export default function App() {
   const handleSaveFirstNewSearch = () => {
     setNewSearchDialogOpen(false);
     setSaveFlowDialogOpen(true);
-  };
-
-  const handleRetry = () => {
-    if (submittedUrl || submittedText) {
-      refetch();
-    }
   };
 
   const handleExportAvailable = (exportFn: (format: 'png' | 'json' | 'afb' | 'flowviz') => void) => {

@@ -7,11 +7,9 @@ import {
   Chip,
   Box,
   Typography,
-  Tooltip,
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
-  Info as InfoIcon,
 } from '@mui/icons-material';
 import { SavedFlow } from '../../types/SavedFlow';
 
@@ -20,7 +18,6 @@ interface FlowListItemProps {
   isSelected: boolean;
   onClick: () => void;
   onMenuClick: (event: React.MouseEvent<HTMLElement>) => void;
-  formatFileSize: (bytes: number) => string;
   formatDate: (date: string) => string;
 }
 
@@ -29,7 +26,6 @@ const FlowListItem: React.FC<FlowListItemProps> = ({
   isSelected,
   onClick,
   onMenuClick,
-  formatFileSize,
   formatDate,
 }) => {
   return (

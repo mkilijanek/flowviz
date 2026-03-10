@@ -11,19 +11,16 @@ import { ConfidenceChip } from '../../../../../shared/components/Alert';
 import { THEME } from '../../constants';
 import { NodeDetailsProps } from '../../types';
 import {
-  isAttackAction,
   isAttackAsset,
   isAttackCondition,
   getMitreLink,
   getTacticName,
-  getNodeDisplayName,
-  getNodeTypeLabel
+  getNodeDisplayName
 } from '../../utils/nodeUtils';
 
 const NodeDetailsPanel: React.FC<NodeDetailsProps> = ({ node, onClose }) => {
   const isActionType = node.type === 'action' || node.type === 'attack-action';
   const displayName = getNodeDisplayName(node);
-  const typeLabel = getNodeTypeLabel(node.type);
 
   const sectionHeaderStyle = {
     color: THEME.text.secondary,
