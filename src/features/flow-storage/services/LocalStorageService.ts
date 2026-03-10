@@ -1,9 +1,10 @@
 import { SavedFlow, StorageStats, ImportResult } from '../types/SavedFlow';
 import { IFlowStorage, StorageError } from './StorageInterface';
+import { FLOWVIZ_DATA_VERSION } from '../../../shared/config/version';
 
 export class LocalStorageService implements IFlowStorage {
   private readonly STORAGE_KEY = 'flowviz_saved_flows';
-  private readonly VERSION = '1.0.0';
+  private readonly VERSION = FLOWVIZ_DATA_VERSION;
   private readonly MAX_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB limit
 
   async saveFlow(flow: SavedFlow): Promise<void> {
@@ -307,7 +308,7 @@ export class LocalStorageService implements IFlowStorage {
         metadata: {
           createdAt: flow.metadata.createdAt,
           updatedAt: flow.metadata.updatedAt,
-          version: flow.metadata.version || '1.0.0',
+          version: flow.metadata.version || FLOWVIZ_DATA_VERSION,
           description: flow.metadata.description,
           tags: Array.isArray(flow.metadata.tags) ? flow.metadata.tags : [],
           nodeCount: flow.metadata.nodeCount || flow.nodes.length,

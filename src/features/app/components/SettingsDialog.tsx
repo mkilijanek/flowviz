@@ -27,6 +27,7 @@ import {
   dropdownMenuStylesDark
 } from '../../../shared/components/Dropdown';
 import { useProviderConfig } from '../hooks/useProviderConfig';
+import { findProviderByModel, resolveProviderSelection } from '../utils/providerSelection';
 import { createScrollbarStyle, flowVizTheme } from '../../../shared/theme/flowviz-theme';
 
 interface SettingsDialogProps {
@@ -101,22 +102,16 @@ export default function SettingsDialog({
     setLocalEdgeCurve(edgeCurve);
     setLocalStoryModeSpeed(storyModeSpeed);
 
-    // Determine provider and model to use
-    const providerToUse = selectedProvider || defaultProvider || '';
-    const modelToUse = selectedModel || defaultModel || '';
+    const resolvedSelection = resolveProviderSelection({
+      providers,
+      selectedProvider,
+      selectedModel,
+      defaultProvider,
+      defaultModel,
+    });
 
-    // Check if the selected model exists in the available providers
-    const modelExists = providers.some(p => p.models.includes(modelToUse));
-
-    // If model doesn't exist or is empty, use first provider's default
-    if ((!modelToUse || !modelExists) && providers.length > 0) {
-      const firstProvider = providers[0];
-      setLocalSelectedProvider(firstProvider.id);
-      setLocalSelectedModel(firstProvider.defaultModel);
-    } else {
-      setLocalSelectedProvider(providerToUse);
-      setLocalSelectedModel(modelToUse);
-    }
+    setLocalSelectedProvider(resolvedSelection.providerId);
+    setLocalSelectedModel(resolvedSelection.modelId);
   }, [cinematicMode, edgeColor, edgeStyle, edgeCurve, storyModeSpeed, selectedProvider, selectedModel, defaultProvider, defaultModel, providers, open]);
 
   const handleSave = () => {
@@ -183,9 +178,7 @@ export default function SettingsDialog({
                   setLocalSelectedModel(selectedModel);
 
                   // Find which provider this model belongs to
-                  const provider = providers.find(p =>
-                    p.models.includes(selectedModel)
-                  );
+                  const provider = findProviderByModel(providers, selectedModel);
                   if (provider) {
                     setLocalSelectedProvider(provider.id);
                     setProviderConfigProvider(provider.id);

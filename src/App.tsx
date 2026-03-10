@@ -7,6 +7,7 @@ import StreamingFlowVisualization from './features/flow-analysis/components/Stre
 import { ValidationError } from './features/flow-analysis/services';
 import { SaveFlowDialog, LoadFlowDialog } from './features/flow-storage/components';
 import { SavedFlow } from './features/flow-storage/types/SavedFlow';
+import { buildLoadedFlowState } from './features/flow-storage/utils/flowState';
 import StreamingProgressBar from './shared/components/StreamingProgressBar';
 import { AppBar, SearchForm, NewSearchDialog, SettingsDialog } from './features/app/components';
 import { useAppState } from './features/app/hooks';
@@ -245,25 +246,13 @@ export default function App() {
   };
 
   const handleLoadFlow = (flow: SavedFlow) => {
-    setLoadedFlow({
-      nodes: flow.nodes,
-      edges: flow.edges,
-      viewport: flow.visualization?.viewport
-    });
-    
-    setArticleContent({
-      text: flow.sourceText || flow.sourceUrl || 'Loaded from saved flow',
-      images: undefined
-    });
-    
-    if (flow.sourceUrl) {
-      setSubmittedUrl(flow.sourceUrl);
-      setInputMode('url');
-    } else if (flow.sourceText) {
-      setSubmittedText(flow.sourceText);
-      setInputMode('text');
-    }
-    
+    const loadedState = buildLoadedFlowState(flow);
+
+    setLoadedFlow(loadedState.loadedFlow);
+    setArticleContent(loadedState.articleContent);
+    setSubmittedUrl(loadedState.submittedUrl);
+    setSubmittedText(loadedState.submittedText);
+    setInputMode(loadedState.inputMode);
     setHasUnsavedChanges(false);
     setIsLoadedFlow(true);
     setLoadFlowDialogOpen(false);

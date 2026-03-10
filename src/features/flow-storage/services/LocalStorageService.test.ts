@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LocalStorageService } from './LocalStorageService';
+import { FLOWVIZ_DATA_VERSION } from '../../../shared/config/version';
 
 // We only test the pure validateFlow() method — no localStorage mocking needed.
 
@@ -14,7 +15,7 @@ function makeValidFlow(overrides: Record<string, any> = {}) {
     metadata: {
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
-      version: '1.0.0',
+      version: FLOWVIZ_DATA_VERSION,
       tags: ['apt'],
       nodeCount: 1,
       edgeCount: 1,
@@ -89,11 +90,11 @@ describe('LocalStorageService.validateFlow()', () => {
     expect(result!.inputMode).toBe('url');
   });
 
-  it('defaults version to "1.0.0" when missing', () => {
+  it('defaults version to the current FlowViz data version when missing', () => {
     const flow = makeValidFlow();
     delete flow.metadata.version;
     const result = service.validateFlow(flow);
-    expect(result!.metadata.version).toBe('1.0.0');
+    expect(result!.metadata.version).toBe(FLOWVIZ_DATA_VERSION);
   });
 
   it('defaults tags to empty array when missing', () => {

@@ -16,6 +16,8 @@ import { toPng } from 'html-to-image';
 import { STIXBundleExporter } from '../../flow-export/services/stixBundleExporter';
 import { AttackFlowV3Exporter } from '../../flow-export/services/attackFlowV3Exporter';
 import { SavedFlow } from '../../flow-storage/types/SavedFlow';
+import { buildSavedFlow } from '../../flow-storage/utils/flowState';
+import { FLOWVIZ_DATA_VERSION } from '../../../shared/config/version';
 import 'reactflow/dist/style.css';
 import { Box } from '@mui/material';
 import ErrorBoundary from '../../../shared/components/ErrorBoundary';
@@ -551,7 +553,7 @@ const StreamingFlowVisualizationContent: React.FC<StreamingFlowVisualizationProp
           viewport: reactFlowInstance?.getViewport(),
           exportedAt: new Date().toISOString(),
           tool: 'FlowViz',
-          version: '1.0.0',
+          version: FLOWVIZ_DATA_VERSION,
           streaming: true
         }
       };
@@ -583,32 +585,19 @@ const StreamingFlowVisualizationContent: React.FC<StreamingFlowVisualizationProp
         }
       });
 
-      const flowVizData: SavedFlow = {
-        id: crypto.randomUUID(),
+      const flowVizData: SavedFlow = buildSavedFlow({
         title: filename,
         sourceUrl: contentType === 'url' ? url : undefined,
         sourceText: contentType === 'text' ? url : undefined,
         inputMode: contentType,
         nodes,
         edges,
-        metadata: {
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          version: '1.0.0',
-          description: 'Exported from FlowViz',
-          tags: [],
-          nodeCount: nodes.length,
-          edgeCount: edges.length,
-        },
-        visualization: {
-          viewport: reactFlowInstance?.getViewport(),
-          storyMode: { enabled: false }
-        },
-        analysis: {
-          extractedTechniques: [...new Set(techniques)],
-          extractedTactics: [...new Set(tactics)]
-        }
-      };
+        viewport: reactFlowInstance?.getViewport(),
+        description: 'Exported from FlowViz',
+      });
+
+      flowVizData.analysis.extractedTechniques = [...new Set(techniques)];
+      flowVizData.analysis.extractedTactics = [...new Set(tactics)];
 
       const dataStr = JSON.stringify(flowVizData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });

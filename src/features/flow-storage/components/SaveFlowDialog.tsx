@@ -18,6 +18,7 @@ import {
 import { Node, Edge, Viewport } from 'reactflow';
 import { SavedFlow } from '../types/SavedFlow';
 import { LocalStorageService, StorageError } from '../services';
+import { buildSavedFlow } from '../utils/flowState';
 
 interface SaveFlowDialogProps {
   open: boolean;
@@ -113,32 +114,19 @@ const SaveFlowDialog: React.FC<SaveFlowDialogProps> = ({
     try {
       const { techniques, tactics } = extractTechniquesAndTactics();
       
-      const flow: SavedFlow = {
-        id: crypto.randomUUID(),
+      const flow: SavedFlow = buildSavedFlow({
         title: title.trim(),
         sourceUrl,
         sourceText,
         inputMode,
         nodes,
         edges,
-        metadata: {
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          version: '1.0.0',
-          description: description.trim() || undefined,
-          tags: [],
-          nodeCount: nodes.length,
-          edgeCount: edges.length,
-        },
-        visualization: {
-          viewport,
-          storyMode: { enabled: false }
-        },
-        analysis: {
-          extractedTechniques: techniques,
-          extractedTactics: tactics
-        }
-      };
+        viewport,
+        description: description.trim() || undefined,
+      });
+
+      flow.analysis.extractedTechniques = techniques;
+      flow.analysis.extractedTactics = tactics;
 
       await storageService.saveFlow(flow);
       onSave(flow);
